@@ -1,0 +1,18 @@
+[project]
+name = "slack-mcp-server"
+version = "0.1.0"
+description = "MCP server for reading Slack conversations and threads"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "slack-sdk>=3.35.0",
+    "python-dotenv>=1.0.0"
+]
+
+[project.scripts]
+slack-mcp = "server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
