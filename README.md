@@ -1,5 +1,7 @@
 # Slack MCP Server
 
+<!-- mcp-name: io.github.stevenvo/slack-mcp-server -->
+
 MCP server for reading Slack conversations and threads you're involved in. Built specifically for use with Claude Code.
 
 ## Features

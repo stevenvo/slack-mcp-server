@@ -4,11 +4,30 @@ version = "0.1.0"
 description = "MCP server for reading Slack conversations and threads"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Steven Vo", email = "findme@stevenvo.info"}
+]
+keywords = ["mcp", "slack", "model-context-protocol", "ai", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "mcp>=1.0.0",
     "slack-sdk>=3.35.0",
     "python-dotenv>=1.0.0"
 ]
+
+[project.urls]
+Homepage = "https://github.com/stevenvo/slack-mcp-server"
+Repository = "https://github.com/stevenvo/slack-mcp-server"
+Issues = "https://github.com/stevenvo/slack-mcp-server/issues"
 
 [project.scripts]
 slack-mcp = "server:main"
