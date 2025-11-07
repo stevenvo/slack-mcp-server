@@ -11,7 +11,7 @@
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
-      "identifier": "slack-mcp-server",
+      "identifier": "stevenvo-slack-mcp",
       "version": "0.1.0",
       "transport": {
         "type": "stdio"
