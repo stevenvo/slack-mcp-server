@@ -32,6 +32,9 @@ Issues = "https://github.com/stevenvo/slack-mcp-server/issues"
 [project.scripts]
 slack-mcp = "server:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
