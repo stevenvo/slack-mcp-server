@@ -1,5 +1,5 @@
 [project]
-name = "stevenvo-slack-mcp"
+name = "slack-mcp-server-v2"
 version = "0.1.0"
 description = "MCP server for reading Slack conversations and threads"
 readme = "README.md"
