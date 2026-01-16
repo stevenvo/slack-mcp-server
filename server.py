@@ -30,7 +30,9 @@ logger = logging.getLogger("slack-mcp")
 SLACK_TOKEN = os.getenv("SLACK_USER_TOKEN", os.getenv("SLACK_BOT_TOKEN", ""))
 if not SLACK_TOKEN:
     logger.error("No SLACK_USER_TOKEN or SLACK_BOT_TOKEN found in environment")
-    raise ValueError("SLACK_USER_TOKEN or SLACK_BOT_TOKEN environment variable is required")
+    raise ValueError(
+        "SLACK_USER_TOKEN or SLACK_BOT_TOKEN environment variable is required"
+    )
 
 # Create SSL context for Zscaler proxy compatibility
 ssl_context = ssl.create_default_context()
@@ -59,21 +61,21 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "channel_id": {
                         "type": "string",
-                        "description": "Slack channel ID (e.g., C1234567890)"
+                        "description": "Slack channel ID (e.g., C1234567890)",
                     },
                     "lookback_hours": {
                         "type": "number",
                         "description": "Hours to look back (default: 24)",
-                        "default": 24
+                        "default": 24,
                     },
                     "limit": {
                         "type": "number",
                         "description": "Maximum messages to retrieve (default: 100, max: 1000)",
-                        "default": 100
-                    }
+                        "default": 100,
+                    },
                 },
-                "required": ["channel_id"]
-            }
+                "required": ["channel_id"],
+            },
         ),
         Tool(
             name="read_thread_messages",
@@ -83,15 +85,15 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "channel_id": {
                         "type": "string",
-                        "description": "Slack channel ID where the thread exists"
+                        "description": "Slack channel ID where the thread exists",
                     },
                     "thread_ts": {
                         "type": "string",
-                        "description": "Thread timestamp (ts of the parent message)"
-                    }
+                        "description": "Thread timestamp (ts of the parent message)",
+                    },
                 },
-                "required": ["channel_id", "thread_ts"]
-            }
+                "required": ["channel_id", "thread_ts"],
+            },
         ),
         Tool(
             name="get_channel_info",
@@ -99,13 +101,10 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "channel_id": {
-                        "type": "string",
-                        "description": "Slack channel ID"
-                    }
+                    "channel_id": {"type": "string", "description": "Slack channel ID"}
                 },
-                "required": ["channel_id"]
-            }
+                "required": ["channel_id"],
+            },
         ),
         Tool(
             name="get_user_info",
@@ -113,13 +112,10 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "user_id": {
-                        "type": "string",
-                        "description": "Slack user ID"
-                    }
+                    "user_id": {"type": "string", "description": "Slack user ID"}
                 },
-                "required": ["user_id"]
-            }
+                "required": ["user_id"],
+            },
         ),
         Tool(
             name="list_my_channels",
@@ -130,11 +126,11 @@ async def list_tools() -> list[Tool]:
                     "types": {
                         "type": "string",
                         "description": "Channel types (comma-separated: public_channel, private_channel, mpim, im)",
-                        "default": "public_channel,private_channel"
+                        "default": "public_channel,private_channel",
                     }
                 },
-                "required": []
-            }
+                "required": [],
+            },
         ),
         Tool(
             name="search_my_conversations",
@@ -144,16 +140,16 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query (automatically includes your mentions)"
+                        "description": "Search query (automatically includes your mentions)",
                     },
                     "count": {
                         "type": "number",
                         "description": "Number of results (default: 20, max: 100)",
-                        "default": 20
-                    }
+                        "default": 20,
+                    },
                 },
-                "required": ["query"]
-            }
+                "required": ["query"],
+            },
         ),
         Tool(
             name="get_message_permalink",
@@ -161,18 +157,15 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "channel_id": {
-                        "type": "string",
-                        "description": "Slack channel ID"
-                    },
+                    "channel_id": {"type": "string", "description": "Slack channel ID"},
                     "message_ts": {
                         "type": "string",
-                        "description": "Message timestamp"
-                    }
+                        "description": "Message timestamp",
+                    },
                 },
-                "required": ["channel_id", "message_ts"]
-            }
-        )
+                "required": ["channel_id", "message_ts"],
+            },
+        ),
     ]
 
 
@@ -184,13 +177,12 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await read_channel_messages(
                 arguments["channel_id"],
                 arguments.get("lookback_hours", 24),
-                arguments.get("limit", 100)
+                arguments.get("limit", 100),
             )
 
         elif name == "read_thread_messages":
             return await read_thread_messages(
-                arguments["channel_id"],
-                arguments["thread_ts"]
+                arguments["channel_id"], arguments["thread_ts"]
             )
 
         elif name == "get_channel_info":
@@ -206,14 +198,12 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 
         elif name == "search_my_conversations":
             return await search_my_conversations(
-                arguments["query"],
-                arguments.get("count", 20)
+                arguments["query"], arguments.get("count", 20)
             )
 
         elif name == "get_message_permalink":
             return await get_message_permalink(
-                arguments["channel_id"],
-                arguments["message_ts"]
+                arguments["channel_id"], arguments["message_ts"]
             )
 
         else:
@@ -231,9 +221,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 
 
 async def read_channel_messages(
-    channel_id: str,
-    lookback_hours: float,
-    limit: int
+    channel_id: str, lookback_hours: float, limit: int
 ) -> list[TextContent]:
     """Read messages from a channel."""
     # Calculate timestamp
@@ -242,13 +230,13 @@ async def read_channel_messages(
 
     # Get channel info
     channel_info = slack_client.conversations_info(channel=channel_id)
-    channel_name = channel_info["channel"]["name"]
+    channel_name = channel_info["channel"].get(
+        "name", channel_info["channel"].get("id", "DM")
+    )
 
     # Fetch messages
     result = slack_client.conversations_history(
-        channel=channel_id,
-        oldest=oldest_ts,
-        limit=min(limit, 1000)
+        channel=channel_id, oldest=oldest_ts, limit=min(limit, 1000)
     )
 
     messages = []
@@ -265,7 +253,9 @@ async def read_channel_messages(
         msg_time = datetime.fromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S UTC")
 
         # Build message URL (requires SLACK_WORKSPACE_URL env var)
-        workspace_url = os.getenv("SLACK_WORKSPACE_URL", "https://your-workspace.slack.com")
+        workspace_url = os.getenv(
+            "SLACK_WORKSPACE_URL", "https://your-workspace.slack.com"
+        )
         ts_clean = ts.replace(".", "")
         msg_url = f"{workspace_url}/archives/{channel_id}/p{ts_clean}"
 
@@ -281,14 +271,18 @@ async def read_channel_messages(
 
         # Add reactions if any
         if msg.get("reactions"):
-            reactions = ", ".join([f":{r['name']}: ({r['count']})" for r in msg["reactions"]])
+            reactions = ", ".join(
+                [f":{r['name']}: ({r['count']})" for r in msg["reactions"]]
+            )
             formatted += f"**Reactions:** {reactions}\n"
 
         formatted += "\n---\n"
         messages.append(formatted)
 
     summary = f"# Messages from #{channel_name}\n"
-    summary += f"Found {len(messages)} messages from the last {lookback_hours} hours\n\n"
+    summary += (
+        f"Found {len(messages)} messages from the last {lookback_hours} hours\n\n"
+    )
     summary += "".join(messages)
 
     return [TextContent(type="text", text=summary)]
@@ -296,10 +290,7 @@ async def read_channel_messages(
 
 async def read_thread_messages(channel_id: str, thread_ts: str) -> list[TextContent]:
     """Read all messages in a thread."""
-    result = slack_client.conversations_replies(
-        channel=channel_id,
-        ts=thread_ts
-    )
+    result = slack_client.conversations_replies(channel=channel_id, ts=thread_ts)
 
     messages = []
     for idx, msg in enumerate(result["messages"]):
@@ -317,7 +308,9 @@ async def read_thread_messages(channel_id: str, thread_ts: str) -> list[TextCont
         formatted += f"**Message:**\n{text}\n"
 
         if msg.get("reactions"):
-            reactions = ", ".join([f":{r['name']}: ({r['count']})" for r in msg["reactions"]])
+            reactions = ", ".join(
+                [f":{r['name']}: ({r['count']})" for r in msg["reactions"]]
+            )
             formatted += f"**Reactions:** {reactions}\n"
 
         formatted += "\n---\n"
@@ -378,9 +371,7 @@ async def get_user_info(user_id: str) -> list[TextContent]:
 async def list_my_channels(types: str) -> list[TextContent]:
     """List channels the user is a member of."""
     result = slack_client.conversations_list(
-        types=types,
-        exclude_archived=True,
-        limit=1000
+        types=types, exclude_archived=True, limit=1000
     )
 
     channels = []
@@ -391,7 +382,9 @@ async def list_my_channels(types: str) -> list[TextContent]:
             members = channel.get("num_members", 0)
             is_private = "🔒" if channel.get("is_private") else "🌐"
 
-            channels.append(f"- {is_private} **#{name}** (`{channel_id}`) - {members} members")
+            channels.append(
+                f"- {is_private} **#{name}** (`{channel_id}`) - {members} members"
+            )
 
     summary = f"# Your Channels\n"
     summary += f"Found {len(channels)} channels you're a member of:\n\n"
@@ -409,10 +402,7 @@ async def search_my_conversations(query: str, count: int) -> list[TextContent]:
     # Add user mention to query
     search_query = f"{query} <@{user_id}>"
 
-    result = slack_client.search_messages(
-        query=search_query,
-        count=min(count, 100)
-    )
+    result = slack_client.search_messages(query=search_query, count=min(count, 100))
 
     messages = []
     for match in result["messages"]["matches"]:
@@ -444,10 +434,7 @@ async def search_my_conversations(query: str, count: int) -> list[TextContent]:
 
 async def get_message_permalink(channel_id: str, message_ts: str) -> list[TextContent]:
     """Get a permanent link to a message."""
-    result = slack_client.chat_getPermalink(
-        channel=channel_id,
-        message_ts=message_ts
-    )
+    result = slack_client.chat_getPermalink(channel=channel_id, message_ts=message_ts)
 
     permalink = result["permalink"]
     info = f"# Message Permalink\n\n**Link:** {permalink}"
@@ -458,13 +445,10 @@ async def get_message_permalink(channel_id: str, message_ts: str) -> list[TextCo
 async def main():
     """Run the MCP server."""
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
