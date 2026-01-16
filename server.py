@@ -188,6 +188,108 @@ async def list_tools() -> list[Tool]:
                 "required": ["channel_id", "text"],
             },
         ),
+        Tool(
+            name="add_reaction",
+            description="Add an emoji reaction to a message.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "channel_id": {
+                        "type": "string",
+                        "description": "Slack channel ID",
+                    },
+                    "message_ts": {
+                        "type": "string",
+                        "description": "Message timestamp",
+                    },
+                    "emoji": {
+                        "type": "string",
+                        "description": "Emoji name (without colons, e.g., 'thumbsup', 'heart', 'rocket')",
+                    },
+                },
+                "required": ["channel_id", "message_ts", "emoji"],
+            },
+        ),
+        Tool(
+            name="remove_reaction",
+            description="Remove an emoji reaction from a message.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "channel_id": {
+                        "type": "string",
+                        "description": "Slack channel ID",
+                    },
+                    "message_ts": {
+                        "type": "string",
+                        "description": "Message timestamp",
+                    },
+                    "emoji": {
+                        "type": "string",
+                        "description": "Emoji name (without colons, e.g., 'thumbsup', 'heart', 'rocket')",
+                    },
+                },
+                "required": ["channel_id", "message_ts", "emoji"],
+            },
+        ),
+        Tool(
+            name="get_user_profile",
+            description="Get detailed user profile information including custom fields.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "Slack user ID",
+                    },
+                },
+                "required": ["user_id"],
+            },
+        ),
+        Tool(
+            name="get_team_info",
+            description="Get workspace/team information.",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        ),
+        Tool(
+            name="list_user_groups",
+            description="List all user groups in the workspace.",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        ),
+        Tool(
+            name="upload_file",
+            description="Upload a file to Slack channel or DM.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "channel_id": {
+                        "type": "string",
+                        "description": "Slack channel ID or user ID (for DMs)",
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "description": "Local file path to upload",
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Optional file title",
+                    },
+                    "initial_comment": {
+                        "type": "string",
+                        "description": "Optional message to post with the file",
+                    },
+                },
+                "required": ["channel_id", "file_path"],
+            },
+        ),
     ]
 
 
@@ -233,6 +335,37 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                 arguments["channel_id"],
                 arguments["text"],
                 arguments.get("thread_ts"),
+            )
+
+        elif name == "add_reaction":
+            return await add_reaction(
+                arguments["channel_id"],
+                arguments["message_ts"],
+                arguments["emoji"],
+            )
+
+        elif name == "remove_reaction":
+            return await remove_reaction(
+                arguments["channel_id"],
+                arguments["message_ts"],
+                arguments["emoji"],
+            )
+
+        elif name == "get_user_profile":
+            return await get_user_profile(arguments["user_id"])
+
+        elif name == "get_team_info":
+            return await get_team_info()
+
+        elif name == "list_user_groups":
+            return await list_user_groups()
+
+        elif name == "upload_file":
+            return await upload_file(
+                arguments["channel_id"],
+                arguments["file_path"],
+                arguments.get("title"),
+                arguments.get("initial_comment"),
             )
 
         else:
@@ -494,6 +627,113 @@ async def send_message(
         info += f"**Thread Reply:** Yes\n"
     info += f"**Link:** {msg_url}\n"
     info += f"**Text:** {text}"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def add_reaction(
+    channel_id: str, message_ts: str, emoji: str
+) -> list[TextContent]:
+    """Add an emoji reaction to a message."""
+    slack_client.reactions_add(channel=channel_id, timestamp=message_ts, name=emoji)
+
+    info = f"# Reaction Added\n\n"
+    info += f"**Channel:** {channel_id}\n"
+    info += f"**Message:** {message_ts}\n"
+    info += f"**Emoji:** :{emoji}:"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def remove_reaction(
+    channel_id: str, message_ts: str, emoji: str
+) -> list[TextContent]:
+    """Remove an emoji reaction from a message."""
+    slack_client.reactions_remove(channel=channel_id, timestamp=message_ts, name=emoji)
+
+    info = f"# Reaction Removed\n\n"
+    info += f"**Channel:** {channel_id}\n"
+    info += f"**Message:** {message_ts}\n"
+    info += f"**Emoji:** :{emoji}:"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def get_user_profile(user_id: str) -> list[TextContent]:
+    """Get detailed user profile information."""
+    result = slack_client.users_profile_get(user=user_id)
+    profile = result["profile"]
+
+    info = f"# User Profile\n\n"
+    info += f"**User ID:** {user_id}\n"
+    info += f"**Display Name:** {profile.get('display_name', 'N/A')}\n"
+    info += f"**Real Name:** {profile.get('real_name', 'N/A')}\n"
+    info += f"**Email:** {profile.get('email', 'N/A')}\n"
+    info += f"**Title:** {profile.get('title', 'N/A')}\n"
+    info += f"**Phone:** {profile.get('phone', 'N/A')}\n"
+    info += f"**Status Text:** {profile.get('status_text', 'N/A')}\n"
+    info += f"**Status Emoji:** {profile.get('status_emoji', 'N/A')}\n"
+
+    if profile.get("fields"):
+        info += f"\n**Custom Fields:**\n"
+        for field_id, field_data in profile["fields"].items():
+            info += f"- {field_data.get('label', field_id)}: {field_data.get('value', 'N/A')}\n"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def get_team_info() -> list[TextContent]:
+    """Get workspace/team information."""
+    result = slack_client.team_info()
+    team = result["team"]
+
+    info = f"# Workspace Information\n\n"
+    info += f"**Name:** {team.get('name', 'N/A')}\n"
+    info += f"**Domain:** {team.get('domain', 'N/A')}\n"
+    info += f"**Email Domain:** {team.get('email_domain', 'N/A')}\n"
+    info += f"**Icon:** {team.get('icon', {}).get('image_132', 'N/A')}\n"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def list_user_groups() -> list[TextContent]:
+    """List all user groups in the workspace."""
+    result = slack_client.usergroups_list()
+    usergroups = result.get("usergroups", [])
+
+    info = f"# User Groups\n\n"
+    info += f"Found {len(usergroups)} user groups:\n\n"
+
+    for group in usergroups:
+        info += f"- **@{group['handle']}** (`{group['id']}`)\n"
+        info += f"  Name: {group.get('name', 'N/A')}\n"
+        info += f"  Description: {group.get('description', 'N/A')}\n"
+        info += f"  Members: {group.get('user_count', 0)}\n\n"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def upload_file(
+    channel_id: str,
+    file_path: str,
+    title: Optional[str] = None,
+    initial_comment: Optional[str] = None,
+) -> list[TextContent]:
+    """Upload a file to Slack."""
+    params = {"channels": channel_id, "file": file_path}
+    if title:
+        params["title"] = title
+    if initial_comment:
+        params["initial_comment"] = initial_comment
+
+    result = slack_client.files_upload(**params)
+    file_info = result["file"]
+
+    info = f"# File Uploaded\n\n"
+    info += f"**File ID:** {file_info['id']}\n"
+    info += f"**Name:** {file_info['name']}\n"
+    info += f"**Size:** {file_info['size']} bytes\n"
+    info += f"**URL:** {file_info.get('permalink', 'N/A')}\n"
 
     return [TextContent(type="text", text=info)]
 
