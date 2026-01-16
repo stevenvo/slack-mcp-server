@@ -166,6 +166,28 @@ async def list_tools() -> list[Tool]:
                 "required": ["channel_id", "message_ts"],
             },
         ),
+        Tool(
+            name="send_message",
+            description="Send a message to a Slack channel or DM. Can also reply to threads.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "channel_id": {
+                        "type": "string",
+                        "description": "Slack channel ID or user ID (for DMs, start with U)",
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "Message text to send",
+                    },
+                    "thread_ts": {
+                        "type": "string",
+                        "description": "Optional: Thread timestamp to reply to a thread",
+                    },
+                },
+                "required": ["channel_id", "text"],
+            },
+        ),
     ]
 
 
@@ -204,6 +226,13 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         elif name == "get_message_permalink":
             return await get_message_permalink(
                 arguments["channel_id"], arguments["message_ts"]
+            )
+
+        elif name == "send_message":
+            return await send_message(
+                arguments["channel_id"],
+                arguments["text"],
+                arguments.get("thread_ts"),
             )
 
         else:
@@ -438,6 +467,33 @@ async def get_message_permalink(channel_id: str, message_ts: str) -> list[TextCo
 
     permalink = result["permalink"]
     info = f"# Message Permalink\n\n**Link:** {permalink}"
+
+    return [TextContent(type="text", text=info)]
+
+
+async def send_message(
+    channel_id: str, text: str, thread_ts: Optional[str] = None
+) -> list[TextContent]:
+    """Send a message to a channel or DM."""
+    params = {"channel": channel_id, "text": text}
+    if thread_ts:
+        params["thread_ts"] = thread_ts
+
+    result = slack_client.chat_postMessage(**params)
+
+    msg_ts = result["message"]["ts"]
+    channel = result["channel"]
+
+    workspace_url = os.getenv("SLACK_WORKSPACE_URL", "https://your-workspace.slack.com")
+    msg_url = f"{workspace_url}/archives/{channel}/p{msg_ts.replace('.', '')}"
+
+    info = f"# Message Sent\n\n"
+    info += f"**Channel:** {channel}\n"
+    info += f"**Timestamp:** {msg_ts}\n"
+    if thread_ts:
+        info += f"**Thread Reply:** Yes\n"
+    info += f"**Link:** {msg_url}\n"
+    info += f"**Text:** {text}"
 
     return [TextContent(type="text", text=info)]
 
